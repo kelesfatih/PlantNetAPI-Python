@@ -3,6 +3,7 @@ import sys
 import os
 import requests
 import contextlib
+import json
 import tkinter as tk
 from tkinter import filedialog
 from dotenv import load_dotenv
@@ -75,7 +76,7 @@ def main():
         sys.exit(1)
 
     pne = PlantNetEndpoints()
-    output_file = "results_1.csv"
+    output_file = os.path.join(directory, "results.csv")
 
     with open(output_file, mode="w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
@@ -96,21 +97,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # pne = PlantNetEndpoints()
-    # images = "20250409_105943.jpg"
-    # def get_highest_result(response_data):
-    #     # Get the list of results from the response
-    #     results = response_data.get("results", [])
-    #     if not results:
-    #         return None
-    #     # Return the entry with the maximum score
-    #     return max(results, key=lambda item: item.get("score", 0))
-    #
-    #
-    # try:
-    #     response = pne.identify([images])
-    #     highest_result = get_highest_result(response)
-    #     print(f"Highest score result: {response}")
-    # except Exception as e:
-    #     print(f"Error: {e}")
