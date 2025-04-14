@@ -4,7 +4,13 @@
 - Save your API key as Plant_Net_API to api.env file in the root directory of the project.
 - Here is an example Plant_Net_API=123456789abcdef0123456789abcdef0
 
+# Requirements
+```
+pip install -r requirements.txt
+```
+
 # Endpoints
+Some endpoints are not added yet. You can use post requests to identify images.
 - GET
   * Status
   * Languages

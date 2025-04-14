@@ -1,6 +1,7 @@
 import csv
 import sys
 import os
+import time
 import requests
 import contextlib
 import json
@@ -91,6 +92,7 @@ def main():
                 sci_name = f"Error: {e}"
                 score = "Error"
             writer.writerow([os.path.basename(image), sci_name, score])
+            time.sleep(1)
 
     print(f"Results have been saved to {output_file}")
 
