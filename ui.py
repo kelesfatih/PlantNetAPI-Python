@@ -7,6 +7,7 @@ import os
 import json
 import re
 from PIL import Image, ExifTags
+from dotenv import load_dotenv
 from plant_net_endpoints import PlantNetEndpoints
 
 def get_image_files(directory):
@@ -95,7 +96,7 @@ def get_exif_data(image_path):
         print(f"Exception occurred: {e}")
         return "Error", "Error"
 
-def main():
+def main(pne):
     root = tk.Tk()
     root.withdraw()
     directory = filedialog.askdirectory(title="Select Image Directory")
@@ -108,7 +109,6 @@ def main():
         print("No image files found in directory.")
         sys.exit(1)
 
-    pne = PlantNetEndpoints()
     output_file = os.path.join(directory, "results.csv")
 
     with open(output_file, mode="w", newline="", encoding="utf-8") as csvfile:
@@ -135,4 +135,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    load_dotenv(r"api.env")
+    api_key = os.environ.get(r"Plant_Net_API")
+    pne = PlantNetEndpoints(api_key)
+    main(pne)

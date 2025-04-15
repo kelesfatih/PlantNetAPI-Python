@@ -4,9 +4,8 @@ import contextlib
 from dotenv import load_dotenv
 
 class PlantNetEndpoints:
-    def __init__(self):
-        load_dotenv("api.env")
-        self.api_key = os.environ.get("Plant_Net_API")
+    def __init__(self, apikey):
+        self.api_key = apikey
         self.base_url = "https://my-api.plantnet.org/v2/"
 
     def status(self):
@@ -154,3 +153,9 @@ class PlantNetEndpoints:
             return response.json()
         else:
             response.raise_for_status()
+
+if __name__ == "__main__":
+    load_dotenv("api.env")
+    api_key = os.environ.get("Plant_Net_API")
+    pne = PlantNetEndpoints(api_key)
+    print(pne.projects(lang="en", type="kt"))
