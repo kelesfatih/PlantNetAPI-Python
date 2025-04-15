@@ -6,6 +6,7 @@ import time
 import os
 import json
 import re
+from PIL import Image, ExifTags
 from plant_net_endpoints import PlantNetEndpoints
 
 def get_image_files(directory):
@@ -41,7 +42,6 @@ def extract_data(response_data):
 
     return predicted_organ, predicted_organ_score, species_name, species_score, genus, family, common_names
 
-
 def save_raw_response(response, base_directory, file_name):
     safe_file_name = os.path.basename(file_name)
     safe_file_name = re.sub(r'[^A-Za-z0-9\-_]', '_', safe_file_name)
@@ -51,6 +51,49 @@ def save_raw_response(response, base_directory, file_name):
     json_file_path = os.path.join(raw_folder, f"{safe_file_name}.json")
     with open(json_file_path, "w", encoding="utf-8") as json_file:
         json.dump(response, json_file, indent=4)
+
+def get_exif_data(image_path):
+    if not os.path.exists(image_path):
+        print(f"File not found: {image_path}")
+        return "N/A", "N/A"
+    try:
+        with Image.open(image_path) as img:
+            exif_data = img._getexif()
+            if not exif_data:
+                return "N/A", "N/A"
+            exif = {ExifTags.TAGS.get(tag, tag): value for tag, value in exif_data.items()}
+            date_time = exif.get("DateTimeOriginal", "N/A")
+            gps_info = exif.get("GPSInfo", None)
+            location = "N/A"
+            if gps_info:
+                def convert_value_to_dms(value):
+                    d = float(value[0])
+                    m = float(value[1])
+                    s = float(value[2])
+                    # Use repr() for full precision in seconds.
+                    return f"{int(d)}:{int(m)}:{repr(s)}"
+
+                lat_dms = None
+                lon_dms = None
+                if 2 in gps_info and 1 in gps_info:
+                    lat_dms = convert_value_to_dms(gps_info[2])
+                    if gps_info[1] == 'S':
+                        lat_dms = f"-{lat_dms}"
+                if 4 in gps_info and 3 in gps_info:
+                    lon_dms = convert_value_to_dms(gps_info[4])
+                    if gps_info[3] == 'W':
+                        lon_dms = f"-{lon_dms}"
+                altitude = None
+                if 6 in gps_info:
+                    altitude = float(gps_info[6])
+                if lat_dms and lon_dms:
+                    location = f"{lat_dms}, {lon_dms}"
+                    if altitude is not None:
+                        altitude = f"{altitude}"
+            return date_time, location, altitude
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return "Error", "Error"
 
 def main():
     root = tk.Tk()
@@ -71,7 +114,7 @@ def main():
     with open(output_file, mode="w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["Image File", "Genus", "Family", "Species Name", "Common Names",
-                         "Predicted Organ", "Predicted Organ Score", "Species Score"])
+                         "Predicted Organ", "Predicted Organ Score", "Species Score", "Date", "Location", "Altitude"])
 
         for image in image_files:
             print(f"Processing: {image}")
@@ -80,9 +123,11 @@ def main():
                 base_file_name = os.path.splitext(os.path.basename(image))[0]
                 save_raw_response(response, directory, base_file_name)
                 predicted_organ, predicted_organ_score, sci_name, species_score, genus, family, common_names = extract_data(response)
+                date_time, location, altitude = get_exif_data(image)
             except Exception as e:
                 predicted_organ = predicted_organ_score = sci_name = species_score = genus = family = common_names = f"Error: {e}"
-            writer.writerow([os.path.basename(image), genus, family, sci_name, common_names, predicted_organ, predicted_organ_score, species_score])
+            writer.writerow([os.path.basename(image), genus, family, sci_name, common_names, predicted_organ,
+                             predicted_organ_score, species_score, date_time, location, altitude])
 
             time.sleep(1)
 
