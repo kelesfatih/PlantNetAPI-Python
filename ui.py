@@ -56,45 +56,43 @@ def save_raw_response(response, base_directory, file_name):
 def get_exif_data(image_path):
     if not os.path.exists(image_path):
         print(f"File not found: {image_path}")
-        return "N/A", "N/A"
+        return "N/A", "N/A", "N/A"
     try:
         with Image.open(image_path) as img:
             exif_data = img._getexif()
             if not exif_data:
-                return "N/A", "N/A"
+                return "N/A", "N/A", "N/A"
             exif = {ExifTags.TAGS.get(tag, tag): value for tag, value in exif_data.items()}
             date_time = exif.get("DateTimeOriginal", "N/A")
             gps_info = exif.get("GPSInfo", None)
             location = "N/A"
+            altitude = "N/A"  # Define altitude before conditional statements.
             if gps_info:
                 def convert_value_to_dms(value):
                     d = float(value[0])
                     m = float(value[1])
                     s = float(value[2])
-                    # Use repr() for full precision in seconds.
                     return f"{int(d)}:{int(m)}:{repr(s)}"
 
                 lat_dms = None
                 lon_dms = None
                 if 2 in gps_info and 1 in gps_info:
                     lat_dms = convert_value_to_dms(gps_info[2])
-                    if gps_info[1] == 'S':
+                    if gps_info[1] == "S":
                         lat_dms = f"-{lat_dms}"
                 if 4 in gps_info and 3 in gps_info:
                     lon_dms = convert_value_to_dms(gps_info[4])
-                    if gps_info[3] == 'W':
+                    if gps_info[3] == "W":
                         lon_dms = f"-{lon_dms}"
-                altitude = None
                 if 6 in gps_info:
-                    altitude = float(gps_info[6])
+                    altitude_value = float(gps_info[6])
+                    altitude = f"{altitude_value}"
                 if lat_dms and lon_dms:
                     location = f"{lat_dms}, {lon_dms}"
-                    if altitude is not None:
-                        altitude = f"{altitude}"
             return date_time, location, altitude
     except Exception as e:
         print(f"Exception occurred: {e}")
-        return "Error", "Error"
+        return "Error", "Error", None
 
 def main(pne):
     root = tk.Tk()
