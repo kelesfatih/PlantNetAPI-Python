@@ -1,3 +1,4 @@
+import shutil
 import tkinter as tk
 from tkinter import filedialog
 import csv
@@ -131,9 +132,62 @@ def main(pne):
 
     print(f"Results have been saved to {output_file}")
 
+def rename_images_from_csv(csv_file, directory):
+    counters = {}  # to keep count for each species_organ key
+    with open(csv_file, newline='', encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            original_file = row["Image File"]
+            species_name = row["Species Name"].replace(" ", "_")
+            predicted_organ = row["Predicted Organ"].replace(" ", "_")
+            key = f"{species_name}_{predicted_organ}"
+            counters[key] = counters.get(key, 0) + 1
+            new_file_name = f"{species_name}_{predicted_organ}_{counters[key]}"
+            file_ext = os.path.splitext(original_file)[1]
+            original_path = os.path.join(directory, original_file)
+            new_path = os.path.join(directory, new_file_name + file_ext)
+            try:
+                os.rename(original_path, new_path)
+                print(f"Renamed {original_file} to {new_file_name + file_ext}")
+            except Exception as e:
+                print(f"Error renaming {original_file}: {e}")
+
+def move_images_by_species_from_filenames(directory):
+    # List files that are in the given directory and are image files
+    image_extensions = ('.jpg', '.jpeg', '.png')
+    for filename in os.listdir(directory):
+        if not os.path.isfile(os.path.join(directory, filename)):
+            continue
+        if not filename.lower().endswith(image_extensions):
+            continue
+
+        # Assume file name is formatted as: SpeciesName_PredictedOrgan_Number
+        # Use rsplit to extract the species name (could contain underscores if original species contained spaces)
+        parts = filename.rsplit('_', 2)
+        if len(parts) < 3:
+            print(f"Skipping file with unexpected name format: {filename}")
+            continue
+        species_name = parts[0]
+
+        # Create the destination folder if it doesn't exist
+        species_folder = os.path.join(directory, species_name)
+        if not os.path.exists(species_folder):
+            os.makedirs(species_folder)
+
+        src_path = os.path.join(directory, filename)
+        dest_path = os.path.join(species_folder, filename)
+        try:
+            shutil.move(src_path, dest_path)
+            print(f"Moved {filename} to {species_name}")
+        except Exception as e:
+            print(f"Error moving {filename}: {e}")
 
 if __name__ == "__main__":
-    load_dotenv(r"api.env")
-    api_key = os.environ.get(r"Plant_Net_API")
+    load_dotenv("api.env")
+    api_key = os.environ.get("Plant_Net_API")
     pne = PlantNetEndpoints(api_key)
     main(pne)
+    # result_file = r"C:\Users\fatih\OneDrive\Desktop\flora_project_2025\test\results.csv"
+    # directory = r"C:\Users\fatih\OneDrive\Desktop\flora_project_2025\test"
+    # rename_images_from_csv(result_file, directory)
+    # move_images_by_species_from_filenames(directory)
