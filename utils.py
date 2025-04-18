@@ -132,7 +132,7 @@ def main(pne):
 
     print(f"Results have been saved to {output_file}")
 
-def rename_images_from_csv(csv_file, directory):
+def rename_images_from_csv(csv_file, directory, suffix: str = ""):
     counters = {}  # to keep count for each species_organ key
     with open(csv_file, newline='', encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -143,6 +143,8 @@ def rename_images_from_csv(csv_file, directory):
             key = f"{species_name}_{predicted_organ}"
             counters[key] = counters.get(key, 0) + 1
             new_file_name = f"{species_name}_{predicted_organ}_{counters[key]}"
+            if suffix:  # Add suffix only if it's not an empty string
+                new_file_name += f"_{suffix}"
             file_ext = os.path.splitext(original_file)[1]
             original_path = os.path.join(directory, original_file)
             new_path = os.path.join(directory, new_file_name + file_ext)
@@ -163,11 +165,11 @@ def move_images_by_species_from_filenames(directory):
 
         # Assume file name is formatted as: SpeciesName_PredictedOrgan_Number
         # Use rsplit to extract the species name (could contain underscores if original species contained spaces)
-        parts = filename.rsplit('_', 2)
-        if len(parts) < 3:
+        parts = filename.rsplit('_', 3)
+        if len(parts) < 4:
             print(f"Skipping file with unexpected name format: {filename}")
             continue
-        species_name = parts[0]
+        species_name = '_'.join(parts[:-3])  # Join all parts except the last three
 
         # Create the destination folder if it doesn't exist
         species_folder = os.path.join(directory, species_name)
@@ -187,7 +189,7 @@ if __name__ == "__main__":
     api_key = os.environ.get("Plant_Net_API")
     pne = PlantNetEndpoints(api_key)
     main(pne)
-    # result_file = r"C:\Users\fatih\OneDrive\Desktop\flora_project_2025\test\results.csv"
-    # directory = r"C:\Users\fatih\OneDrive\Desktop\flora_project_2025\test"
-    # rename_images_from_csv(result_file, directory)
+    # result_file = r"C:\Users\fatih\Desktop\flora_project_2025\test\results.csv"
+    # directory = r"C:\Users\fatih\Desktop\flora_project_2025\test"
+    # rename_images_from_csv(result_file, directory, "fk")
     # move_images_by_species_from_filenames(directory)
