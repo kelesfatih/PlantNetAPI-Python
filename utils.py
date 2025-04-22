@@ -7,6 +7,7 @@ import time
 import os
 import json
 import re
+import pandas as pd
 from PIL import Image, ExifTags
 from dotenv import load_dotenv
 from plant_net_endpoints import PlantNetEndpoints
@@ -183,6 +184,174 @@ def move_images_by_species_from_filenames(directory):
             print(f"Moved {filename} to {species_name}")
         except Exception as e:
             print(f"Error moving {filename}: {e}")
+
+def replace_initials(directory, old_initials, new_initials):
+    for root, _, files in os.walk(directory):
+        for file in files:
+            base, ext = os.path.splitext(file)
+            # Check if the filename (without extension) ends with the old initials.
+            if base.endswith(old_initials):
+                # Create a new base name by replacing the ending initials.
+                new_base = base[:-len(old_initials)] + new_initials
+                new_file = new_base + ext
+                old_path = os.path.join(root, file)
+                new_path = os.path.join(root, new_file)
+                try:
+                    os.rename(old_path, new_path)
+                    print(f"Renamed: {old_path} --> {new_path}")
+                except Exception as e:
+                    print(f"Error renaming {old_path}: {e}")
+
+def merge_csv_files(root_dir, output_file=None):
+    # Save merged CSV file in the top directory if no output_file is provided
+    if output_file is None:
+        output_file = os.path.join(root_dir, "merged_results.csv")
+    header_saved = False
+    with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
+        writer = None
+        for dirpath, _, filenames in os.walk(root_dir):
+            if 'results.csv' in filenames:
+                file_path = os.path.join(dirpath, 'results.csv')
+                with open(file_path, 'r', newline='', encoding='utf-8') as infile:
+                    reader = csv.reader(infile)
+                    header = next(reader)
+                    if not header_saved:
+                        writer = csv.writer(outfile)
+                        writer.writerow(header)
+                        header_saved = True
+                    for row in reader:
+                        writer.writerow(row)
+                print(f"Merged: {file_path}")
+    print(f"Merged CSV saved as: {os.path.abspath(output_file)}")
+
+def get_first_english_common_name(common_names_str):
+    if not common_names_str:
+        return ""
+    for name in common_names_str.split(','):
+        candidate = name.strip()
+        try:
+            candidate.encode('ascii')
+            return candidate
+        except UnicodeEncodeError:
+            continue
+    return common_names_str.split(',')[0].strip()
+
+def organs_transposed(input_file, output_file):
+    species_dict = {}
+
+    # Read the input file and build a dictionary where each species collects its details.
+    with open(input_file, 'r', newline='', encoding='utf-8') as infile:
+        reader = csv.DictReader(infile)
+        for row in reader:
+            species_name = row['Species Name']
+            predicted_organ = row['Predicted Organ'].strip().lower()
+            if species_name not in species_dict:
+                # Store first occurrence values including Date, Location, and Altitude.
+                species_dict[species_name] = {
+                    'Genus': row['Genus'],
+                    'Family': row['Family'],
+                    'Common Names': get_first_english_common_name(row['Common Names']),
+                    'Date': row['Date'],
+                    'Location': row['Location'],
+                    'Altitude': row['Altitude'],
+                    'organs': set()
+                }
+            species_dict[species_name]['organs'].add(predicted_organ)
+
+    # Get a sorted list of unique organ names.
+    all_organs = sorted({organ for sp in species_dict.values() for organ in sp['organs']})
+
+    # Define fieldnames with organ columns placed between Common Names and Date.
+    # (Note: if "Turkish Name" is not needed, remove it.)
+    fieldnames = ['Genus', 'Family', 'Species Name', 'Common Names', "Turkish Name", "Type", "Clade"] + all_organs + ['Date', 'Location', 'Altitude']
+
+    # Write the transposed output.
+    with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for species_name, data in species_dict.items():
+            row_dict = {
+                'Genus': data['Genus'],
+                'Family': data['Family'],
+                'Species Name': species_name,
+                'Common Names': data['Common Names'],
+                'Date': data['Date'],
+                'Location': data['Location'],
+                'Altitude': data['Altitude']
+            }
+            for organ in all_organs:
+                row_dict[organ] = '+' if organ in data['organs'] else ''
+            writer.writerow(row_dict)
+
+    print(f"Output saved at: {os.path.abspath(output_file)}")
+
+def merge_excel_mapping(main_csv, mapping_xlsx, output_excel):
+    # Define column names for the main file
+    main_cols = ['Genus', 'Family', 'Species Name', 'Common Names', 'Turkish Name', 'Type', 'Clade',
+                 'bark', 'flower', 'fruit', 'habit', 'leaf', 'Date', 'Location', 'Altitude']
+    # Load main CSV file
+    main_df = pd.read_csv(main_csv, encoding='utf-8')
+
+    # Ensure the main file contains all expected columns. Missing ones are created as empty.
+    for col in main_cols:
+        if col not in main_df.columns:
+            main_df[col] = ""
+
+    # Load mapping Excel file
+    mapping_df = pd.read_excel(mapping_xlsx)
+
+    # Standardize keys: trim and lower-case for matching
+    main_df['species_key'] = main_df['Species Name'].astype(str).str.strip().str.lower()
+    main_df['common_key'] = main_df['Common Names'].astype(str).str.strip().str.lower()
+    mapping_df['species_key'] = mapping_df['LATIN NAME'].astype(str).str.strip().str.lower()
+    mapping_df['common_key'] = mapping_df['ENGLISH NAME'].astype(str).str.strip().str.lower()
+
+    # Create a mapping index by the key pair for easy lookup
+    mapping_keys = mapping_df.set_index(['species_key', 'common_key'])
+
+    # Update Turkish Name, Type, Clade for matching rows in the main DataFrame
+    def update_row(row):
+        key = (row['species_key'], row['common_key'])
+        if key in mapping_keys.index:
+            row['Turkish Name'] = mapping_keys.loc[key, 'TURKISH NAME']
+            row['Type'] = mapping_keys.loc[key, 'Type']
+            row['Clade'] = mapping_keys.loc[key, 'clade']
+        return row
+
+    main_df = main_df.apply(update_row, axis=1)
+
+    # Find new rows from mapping that are not in main_df
+    main_keys = set(zip(main_df['species_key'], main_df['common_key']))
+    new_entries = mapping_df[~mapping_df.apply(lambda r: (r['species_key'], r['common_key']) in main_keys, axis=1)]
+
+    # Create DataFrame for new species with empty values for columns not provided by mapping
+    new_rows = pd.DataFrame(columns=main_cols)
+    for _, r in new_entries.iterrows():
+        new_row = {
+            'Genus': "",
+            'Family': "",
+            'Species Name': r['LATIN NAME'],
+            'Common Names': r['ENGLISH NAME'],
+            'Turkish Name': r['TURKISH NAME'],
+            'Type': r['Type'],
+            'Clade': r['clade'],
+            'bark': "",
+            'flower': "",
+            'fruit': "",
+            'habit': "",
+            'leaf': "",
+            'Date': "",
+            'Location': "",
+            'Altitude': ""
+        }
+        new_rows = new_rows._append(new_row, ignore_index=True)
+
+    # Append new rows to main DataFrame
+    combined_df = pd.concat([main_df[main_cols], new_rows], ignore_index=True)
+
+    # Save result to an Excel file
+    combined_df.to_excel(output_excel, index=False)
+    print(f"Output saved at: {output_excel}")
 
 if __name__ == "__main__":
     load_dotenv("api.env")
