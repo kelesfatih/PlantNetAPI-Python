@@ -28,19 +28,20 @@ def create_log_widget(root):
     return log_text
 
 
-def open_readme():
-    readme_path = "README.md"
-    if not os.path.exists(readme_path):
-        print(r"README.md file not found.")
-        return
+def docs():
+    items = [
+        "Set API Key: Save your API key here",
+        "Reset API Key: Remove the saved API key",
+        "Identify Images: Select the directory with images to identify",
+        "Rename Images: Be sure that you reviewed results. Rename images based on species, select CSV and directory"
+        "and enter your initials (first letter of your name and surname)",
+        "Group by Species: Group images by species in the selected directory",
+        "Transform Results: Refactor results from CSV, new file will be renamed to results_transformed.csv",
+    ]
+    content = "\n".join(items)
     top = tk.Toplevel()
-    top.title(r"README")
+    top.title(r"Information List")
     top.geometry("800x600")
-    try:
-        with open(readme_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except Exception as e:
-        content = f"Error reading README: {e}"
     text_area = scrolledtext.ScrolledText(top, wrap=tk.WORD)
     text_area.pack(expand=True, fill="both")
     text_area.insert("1.0", content)
@@ -116,7 +117,7 @@ root.geometry("1200x600")
 top_frame = tk.Frame(root)
 top_frame.pack(pady=20)
 
-btn_question = tk.Button(top_frame, text="?", command=open_readme, width=4, padx=5, pady=5)
+btn_question = tk.Button(top_frame, text="?", command=docs, width=4, padx=5, pady=5)
 btn_question.pack(side=tk.LEFT, padx=10)
 
 btn_set_api = tk.Button(top_frame, text="Set API Key", command=set_api_key, width=12, padx=5, pady=5)
