@@ -2,8 +2,15 @@
 
 - You need to have private API key to initiate API. You can get it from [here](https://my.plantnet.org/account/settings).
 
-# Requirements
-
+# Install
+```
+git clone https://github.com/kelesfatih/PlantNetAPI-Python.git
+```
+# Navigate to project directory
+```
+cd PlantNetAPI-Python
+```
+# Install Requirements
 ```
 pip install -r requirements.txt
 ```
