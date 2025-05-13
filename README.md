@@ -17,7 +17,7 @@ pip install -r requirements.txt
 # Convert to executable
 ```
 pip install pyinstaller
-pyinstaller --onefile gui.py
+pyinstaller --onefile --windowed gui.py
 ```
 
 # Endpoints
