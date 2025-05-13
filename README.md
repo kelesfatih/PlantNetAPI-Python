@@ -14,12 +14,24 @@ cd PlantNetAPI-Python
 ```
 pip install -r requirements.txt
 ```
-# Convert to executable
+# Windows Users: Convert to executable (.exe) file
+For Windows users it is recommended to convert this repository to executable using PyInstaller. 
+You can do this by running the following command in the terminal:
 ```
 pip install pyinstaller
 pyinstaller --onefile --windowed src/gui.py
 ```
-
+# CLI Users
+If you want to use this repository with CLI, you need to initiate endpoints class with your API key.
+```
+from src.endpoints import PlantNetEndpoints
+pne = PlantNetEndpoints("your_api_key_here")
+```
+Then you can use the functions as follows:
+```
+from src.utils import *
+identify_images_api(pne)
+```
 # Endpoints
 - GET
   * Status
