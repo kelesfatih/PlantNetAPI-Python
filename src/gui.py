@@ -4,7 +4,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, simpledialog, messagebox, scrolledtext
 from dotenv import load_dotenv
-from endpoints import PlantNetEndpoints
+from src.endpoints import PlantNetEndpoints
 
 
 class GuiOutput:
@@ -51,7 +51,7 @@ def docs():
 def set_api_key():
     api_key = simpledialog.askstring(r"API Key", r"Enter your API key:")
     if api_key:
-        with open("api.env", "w", encoding="utf-8") as f:
+        with open("../api.env", "w", encoding="utf-8") as f:
             f.write(f"Plant_Net_API={api_key}")
         print(r"API key saved as api.env")
     else:
@@ -59,8 +59,8 @@ def set_api_key():
 
 
 def reset_api_key():
-    if os.path.exists("api.env"):
-        os.remove("api.env")
+    if os.path.exists("../api.env"):
+        os.remove("../api.env")
         messagebox.showinfo(r"Success", r"API key has been reset.")
     else:
         messagebox.showerror(r"Error", r"No API key file found to reset.")
@@ -68,12 +68,12 @@ def reset_api_key():
 
 def run_identify_images():
     def task():
-        load_dotenv("api.env")
+        load_dotenv("../api.env")
         api_key = os.environ.get("Plant_Net_API")
         if not api_key:
             print("API key not found in api.env")
             return
-        from utils import identify_images_api
+        from src.utils import identify_images_api
         pne = PlantNetEndpoints(api_key)
         identify_images_api(pne)
     threading.Thread(target=task, daemon=True).start()
@@ -90,7 +90,7 @@ def run_rename_to_species():
     if not suffix:
         print(r"No prefix provided.")
         return
-    from utils import rename_to_species
+    from src.utils import rename_to_species
     rename_to_species(csv_file, directory, suffix)
 
 
@@ -98,7 +98,7 @@ def run_group_by_species():
     directory = filedialog.askdirectory(title=r"Select image directory")
     if not directory:
         return
-    from utils import group_by_species
+    from src.utils import group_by_species
     group_by_species(directory)
 
 
@@ -106,7 +106,7 @@ def run_refactor_results():
     input_file = filedialog.askopenfilename(title=r"Select input CSV file", filetypes=[(r"CSV Files", r"*.csv")])
     if not input_file:
         return
-    from utils import refactor_results
+    from src.utils import refactor_results
     refactor_results(input_file)
 
 
