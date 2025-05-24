@@ -3,6 +3,7 @@ import sys
 import threading
 import tkinter as tk
 from tkinter import filedialog, simpledialog, messagebox, scrolledtext
+from tkinter import ttk
 from dotenv import load_dotenv
 from src.endpoints import PlantNetEndpoints
 
@@ -10,40 +11,48 @@ from src.endpoints import PlantNetEndpoints
 class GuiOutput:
     def __init__(self, text_widget):
         self.text_widget = text_widget
+
     def write(self, message):
         self.text_widget.configure(state=tk.NORMAL)
         self.text_widget.insert(tk.END, message)
         self.text_widget.see(tk.END)
-        self.text_widget.update_idletasks()  # force update for every message
+        self.text_widget.update_idletasks()
         self.text_widget.configure(state=tk.DISABLED)
+
     def flush(self):
         pass
 
 
 def create_log_widget(root):
-    log_frame = tk.Frame(root)
-    log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    log_text = scrolledtext.ScrolledText(log_frame, wrap=tk.WORD, height=10, state=tk.DISABLED)
+    log_frame = ttk.Frame(root, padding=10)
+    log_frame.pack(fill=tk.BOTH, expand=True)
+    log_text = scrolledtext.ScrolledText(
+        log_frame,
+        wrap=tk.WORD,
+        height=10,
+        state=tk.DISABLED,
+        font=('Segoe UI', 10),
+        background='#fdf6e3'
+    )
     log_text.pack(fill=tk.BOTH, expand=True)
     return log_text
 
 
 def docs():
     items = [
-        "Set API Key: Save your API key here",
-        "Reset API Key: Remove the saved API key",
-        "Identify Images: Select the directory with images to identify",
-        "Rename Images: Be sure that you reviewed results. Rename images based on species, select CSV and directory"
-        "and enter your initials (first letter of your name and surname)",
-        "Group by Species: Group images by species in the selected directory",
-        "Transform Results: Refactor results from CSV, new file will be renamed to results_transformed.csv",
+        r"Set API Key: Save your API key here",
+        r"Reset API Key: Remove the saved API key",
+        r"Identify Images: Select the directory with images to identify",
+        r"Rename Images: Be sure that you reviewed results. Rename images based on species, select CSV and directory and enter your initials (first letter of your name and surname)",
+        r"Group by Species: Group images by species in the selected directory",
+        r"Transform Results: Refactor results from CSV, new file will be renamed to results_transformed.csv",
     ]
     content = "\n".join(items)
     top = tk.Toplevel()
     top.title(r"Information List")
     top.geometry("800x600")
-    text_area = scrolledtext.ScrolledText(top, wrap=tk.WORD)
-    text_area.pack(expand=True, fill="both")
+    text_area = scrolledtext.ScrolledText(top, wrap=tk.WORD, font=('Segoe UI', 10))
+    text_area.pack(expand=True, fill="both", padx=10, pady=10)
     text_area.insert("1.0", content)
     text_area.config(state=tk.DISABLED)
 
@@ -114,31 +123,43 @@ root = tk.Tk()
 root.title(r"Flora Project - GUI")
 root.geometry("1200x600")
 
-top_frame = tk.Frame(root)
+# Use ttk styling for modern aesthetics and more color
+style = ttk.Style()
+style.theme_use('clam')
+style.configure('TFrame', background='#f0f0f0')
+style.configure('TButton',
+                font=('Segoe UI', 10),
+                padding=6,
+                background='#1e90ff',
+                foreground='white')
+style.map('TButton',
+          background=[('active', '#104e8b'), ('pressed', '#082567')])
+
+top_frame = ttk.Frame(root, padding=20)
 top_frame.pack(pady=20)
 
-btn_question = tk.Button(top_frame, text="?", command=docs, width=4, padx=5, pady=5)
+btn_question = ttk.Button(top_frame, text="?", command=docs, width=4)
 btn_question.pack(side=tk.LEFT, padx=10)
 
-btn_set_api = tk.Button(top_frame, text="Set API Key", command=set_api_key, width=12, padx=5, pady=5)
+btn_set_api = ttk.Button(top_frame, text="Set API Key", command=set_api_key, width=12)
 btn_set_api.pack(side=tk.LEFT, padx=10)
 
-btn_reset_api = tk.Button(top_frame, text="Reset API Key", command=reset_api_key, width=12, padx=5, pady=5)
+btn_reset_api = ttk.Button(top_frame, text="Reset API Key", command=reset_api_key, width=12)
 btn_reset_api.pack(side=tk.LEFT, padx=10)
 
-button_frame = tk.Frame(top_frame)
+button_frame = ttk.Frame(top_frame)
 button_frame.pack(side=tk.LEFT, padx=10)
 
-btn_main = tk.Button(button_frame, text="Identify Images", command=run_identify_images, width=20, padx=5, pady=5)
+btn_main = ttk.Button(button_frame, text="Identify Images", command=run_identify_images, width=20)
 btn_main.pack(side=tk.LEFT, padx=10)
 
-btn_rename = tk.Button(button_frame, text="Rename Images", command=run_rename_to_species, width=20, padx=5, pady=5)
+btn_rename = ttk.Button(button_frame, text="Rename Images", command=run_rename_to_species, width=20)
 btn_rename.pack(side=tk.LEFT, padx=10)
 
-btn_move = tk.Button(button_frame, text="Group by Species", command=run_group_by_species, width=20, padx=5, pady=5)
+btn_move = ttk.Button(button_frame, text="Group by Species", command=run_group_by_species, width=20)
 btn_move.pack(side=tk.LEFT, padx=10)
 
-btn_transposed = tk.Button(button_frame, text="Transform Results", command=run_refactor_results, width=20, padx=5, pady=5)
+btn_transposed = ttk.Button(button_frame, text="Transform Results", command=run_refactor_results, width=20)
 btn_transposed.pack(side=tk.LEFT, padx=10)
 
 log_text = create_log_widget(root)
