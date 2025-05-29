@@ -47,3 +47,4 @@ def merge_images(src_main_folders, dest_folder):
                     print(f"Copied {src_file} to {dest_file}")
                 else:
                     print(f"Skipped non-image file: {file}")
+
