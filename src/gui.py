@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import filedialog, simpledialog, messagebox, scrolledtext
 from tkinter import ttk
 from dotenv import load_dotenv
-from src.endpoints import PlantNetEndpoints
+from endpoints import PlantNetEndpoints
 
 
 class GuiOutput:
@@ -82,7 +82,7 @@ def run_identify_images():
         if not api_key:
             print("API key not found in api.env")
             return
-        from src.utils import identify_images_api
+        from utils import identify_images_api
         pne = PlantNetEndpoints(api_key)
         identify_images_api(pne)
     threading.Thread(target=task, daemon=True).start()
@@ -99,7 +99,7 @@ def run_rename_to_species():
     if not suffix:
         print(r"No prefix provided.")
         return
-    from src.utils import rename_to_species
+    from utils import rename_to_species
     rename_to_species(csv_file, directory, suffix)
 
 
@@ -107,7 +107,7 @@ def run_group_by_species():
     directory = filedialog.askdirectory(title=r"Select image directory")
     if not directory:
         return
-    from src.utils import group_by_species
+    from utils import group_by_species
     group_by_species(directory)
 
 
@@ -115,7 +115,7 @@ def run_refactor_results():
     input_file = filedialog.askopenfilename(title=r"Select input CSV file", filetypes=[(r"CSV Files", r"*.csv")])
     if not input_file:
         return
-    from src.utils import refactor_results
+    from utils import refactor_results
     refactor_results(input_file)
 
 
